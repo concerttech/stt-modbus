@@ -1,0 +1,14 @@
+{
+  "prodRuntimeDeps": [
+    "libgpiod2",
+    "libmosquitto1"
+  ],
+  "devRuntimeDeps": [
+    "libgpiod-dev",
+    "libmosquitto-dev"
+  ],
+  "buildDeps": [
+    "libgpiod-dev",
+    "libmosquitto-dev"
+  ]
+}

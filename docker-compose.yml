@@ -1,0 +1,29 @@
+version: "3.9"
+services:
+  sttmodbus-debug:
+    build:
+      context: .
+      dockerfile: Dockerfile.debug
+    image: ${LOCAL_REGISTRY}:5002/sttmodbus-debug:${TAG}
+    ports:
+      - ${DEBUG_SSH_PORT}:${DEBUG_SSH_PORT}
+    device_cgroup_rules:
+      - c 4:* rmw
+      - c 13:* rmw
+      - c 199:* rmw
+      - c 226:* rmw
+      - c 81:* rmw 
+      - c 254:* rmw
+    devices:
+      - "/dev/gpiochip0"
+      - "/dev/gpiochip1"
+      - "/dev/gpiochip2"
+      - "/dev/gpiochip3"
+      - "/dev/gpiochip4"
+      - "/dev/verdin-uart1"
+      - "/dev/verdin-uart2"
+  sttmodbus:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ${DOCKER_LOGIN}/sttmodbus:${TAG}

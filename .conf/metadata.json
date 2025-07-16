@@ -1,0 +1,5 @@
+{
+  "templateName": "cmakeConsole",
+  "containerName": "sttmodbus",
+  "torizonOSMajor": "6"
+}
