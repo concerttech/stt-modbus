@@ -14,6 +14,7 @@ struct Partition0Data {
     uint32_t HardwareVersion;
     uint32_t ProductSerialNumber;
     uint16_t DeviceAddress;
+    uint8_t  onLine;
 }; // Partition0Data
 
 struct Partition1Data {
@@ -60,7 +61,7 @@ struct Partition1Data {
     uint16_t SystemHealthIndex;
     uint16_t ChargeDurationOnDay;
     uint16_t NightDuration;
-
+    uint8_t  onLine;
 }; // Partition1Data
 
 

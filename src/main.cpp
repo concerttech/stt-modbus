@@ -30,6 +30,8 @@
 #define DATA_BITS 8             // 8 bits de dados
 #define STOP_BITS 1             // 1 bit de parada
 
+#define DEFAULT_UPDATE_NTERVAL  10 // 10 segundos
+
 // Definição das portas de IO
 /*----------Serial A------------*/
 // SODIMM 133
@@ -145,7 +147,7 @@ int ConfigIO(uint8_t porta) {
  *  @param Partition0Data Data to be published
  *  
  */
-void publishPartition0Data(struct mosquitto *mosq, struct Partition0Data *data) {
+void publishPartition0Data(struct mosquitto *mosq, struct Partition0Data *data, char *mqttTopic) {
 
     char payload[1024]; // Ajuste o tamanho conforme necessário
     int payloadLength = 0;
@@ -153,7 +155,7 @@ void publishPartition0Data(struct mosquitto *mosq, struct Partition0Data *data) 
     int i;
 
     // Constrói o tópico para a partição 0
-    snprintf(topic, sizeof(topic), MQTT_TOPIC_PARTITION_0);
+    snprintf(topic, sizeof(topic), mqttTopic);
 
     // Prepara o payload com os dados da estrutura no formato "Nome:Valor"
     payloadLength = snprintf(payload, sizeof(payload),
@@ -166,7 +168,8 @@ void publishPartition0Data(struct mosquitto *mosq, struct Partition0Data *data) 
         "\"SoftwareVersion\":%u,"
         "\"HardwareVersion\":%u,"
         "\"ProductSerialNumber\":%u,"
-        "\"DeviceAddress\":%u"
+        "\"DeviceAddress\":%u,"
+        "\"Online\":%u"
         "}",
         data->MaxVoltage, 
         data->RatedCurrent, 
@@ -176,7 +179,8 @@ void publishPartition0Data(struct mosquitto *mosq, struct Partition0Data *data) 
         data->SoftwareVersion,
         data->HardwareVersion,
         data->ProductSerialNumber,
-        data->DeviceAddress
+        data->DeviceAddress,
+        data->onLine
     );
 
     if (payloadLength < 0) {
@@ -197,36 +201,16 @@ void publishPartition0Data(struct mosquitto *mosq, struct Partition0Data *data) 
  *  @param Partition1Data Data to be published
  *  
  */
-void publishPartition1Data(struct mosquitto *mosq, struct Partition1Data *data) {
+void publishPartition1Data(struct mosquitto *mosq, struct Partition1Data *data, char *mqttTopic) {
     char payload[2048]; // Ajuste o tamanho conforme necessário
     int payloadLength = 0;
     char topic[100];
 
     // Constrói o tópico para a partição 1
-    snprintf(topic, sizeof(topic), MQTT_TOPIC_PARTITION_1);
+    snprintf(topic, sizeof(topic), mqttTopic);
 
     // Prepara o payload com os dados da estrutura no formato "Nome:Valor"
-/*    
     payloadLength = snprintf(payload, sizeof(payload),
-    "LoadState:%u,ChargeState:%u,BatterySOC:%u,BatteryVoltage:%u,ChargeCurrent:%u,DeviceTemperature:%u,BatteryTemperature:%u,"
-    "LoadVoltage:%u,LoadCurrent:%u,LoadPower:%u,SolarPanelVoltage:%u,SolarPanelCurrent:%u,ChargePower:%u,LoadOnOff:%u,"
-    "MinBatteryVoltageToday:%u,MaxBatteryVoltageToday:%u,MinChargeCurrentToday:%u,MaxChargeCurrentToday:%u,"
-    "MaxChargePowerToday:%u,MaxDischargePowerToday:%u,DischargeAmpereHourToday:%u,GeneratingCapacityToday:%u,"
-    "ElectricityConsumedToday:%u,TotalBatteryChargeTimes:%u,TotalBatteryChargeAH:%u,TotalBatteryDischargeAH:%u,"
-    "TotalGeneratingCapacity:%u,MinBatteryTemperatureToday:%u,TotalLoadOperationTime:%u,LastLoadTurnOnTime:%u,"
-    "LastLoadTurnOffTime:%u,LightingIndex:%u,EnergyConsumption:%u,SystemHealthIndex:%u",
-    data->LoadState, data->ChargeState, data->BatterySOC, data->BatteryVoltage, data->ChargeCurrent,
-    data->DeviceTemperature, data->BatteryTemperature, data->LoadVoltage, data->LoadCurrent, data->LoadPower,
-    data->SolarPanelVoltage, data->SolarPanelCurrent, data->ChargePower, data->LoadOnOff,
-    data->MinBatteryVoltageToday, data->MaxBatteryVoltageToday, data->MinChargeCurrentToday,
-    data->MaxChargeCurrentToday, data->MaxChargePowerToday, data->MaxDischargePowerToday,
-    data->DischargeAmpereHourToday, data->GeneratingCapacityToday, data->ElectricityConsumedToday,
-    data->TotalBatteryChargeTimes, data->TotalBatteryChargeAH, data->TotalBatteryDischargeAH,
-    data->TotalGeneratingCapacity, data->MinBatteryTemperatureToday, data->TotalLoadOperationTime,
-    data->LastLoadTurnOnTime, data->LastLoadTurnOffTime, data->LightingIndex, data->EnergyConsumption, data->SystemHealthIndex
-);
-*/
-payloadLength = snprintf(payload, sizeof(payload),
         "{ "
         "\"LoadState\":%u,"
         "\"ChargeState\":%u,"
@@ -270,7 +254,8 @@ payloadLength = snprintf(payload, sizeof(payload),
         "\"EnergyConsumption\":%u," // Endereço 0x12A [cite: 93]
         "\"SystemHealthIndex\":%u," // Endereço 0x12B [cite: 93]
         "\"ChargeDurationOnDay\":%u," // Endereço 0x12C [cite: 93]
-        "\"NightDuration\":%u" // Endereço 0x12D [cite: 93]
+        "\"NightDuration\":%u," // Endereço 0x12D [cite: 93]
+        "\"OnLine\":%u"
         "}",
         data->LoadState,
         data->ChargeState,
@@ -314,7 +299,8 @@ payloadLength = snprintf(payload, sizeof(payload),
         data->EnergyConsumption, // %u [cite: 93]
         data->SystemHealthIndex, // %u [cite: 93]
         data->ChargeDurationOnDay, // %u [cite: 93]
-        data->NightDuration // %u [cite: 93]
+        data->NightDuration, // %u [cite: 93]
+        data->onLine
     );
 
     if (payloadLength < 0) {
@@ -334,13 +320,13 @@ payloadLength = snprintf(payload, sizeof(payload),
  *  @param WeatherStationData Data to be published
  *  
  */
-void publishWeatherStationData(struct mosquitto *mosq, struct TWeatherStationData *data) {
+void publishWeatherStationData(struct mosquitto *mosq, struct TWeatherStationData *data, char *mqttTopic) {
     char payload[2048]; // Ajuste o tamanho conforme necessário
     int payloadLength = 0;
     char topic[100];
 
     // Constrói o tópico para a partição 1
-    snprintf(topic, sizeof(topic), MQQT_TOPIC_WEATHERSTATION);
+    snprintf(topic, sizeof(topic), mqttTopic);
 
     // Prepara o payload com os dados da estrutura no formato "Nome:Valor"
     payloadLength = snprintf(payload, sizeof(payload),
@@ -350,7 +336,8 @@ void publishWeatherStationData(struct mosquitto *mosq, struct TWeatherStationDat
         "\"relativeHumidity\":%.1f," 
         "\"accumulatedRainfall\":%.1f," 
         "\"windDirection\":%u," 
-        "\"windSpeed\":%.1f" 
+        "\"windSpeed\":%.1f," 
+        "\"OnLine\":%u"
         /*
         uint16_t WindForce;
         uint16_t WindDirectionGrade;
@@ -367,7 +354,8 @@ void publishWeatherStationData(struct mosquitto *mosq, struct TWeatherStationDat
         data->Humidity/10.0,
         data->Rainfall/10.0,
         data->WindDirectionAngle,
-        data->WindSpeed/10.0
+        data->WindSpeed/10.0,
+        data->onLine
     );
 
     if (payloadLength < 0) {
@@ -394,20 +382,60 @@ int main() {
     int serialPortFD;
     int rc;
     int serialPortNumber;
-    char *mqttServerName;
+    char *mqttServerAddr, *mqttPortStr, *updateIntervalStr;
+    char *mqttClientId, *mqttTopicPartition0, *mqttTopicPartition1, *mqttTopicWeather;
     char *serialPortStr;
     struct mosquitto *mosq = NULL;
+    int mqttPort;
+    int updateInterval;
 
     fprintf (stdout,"======================\n");
     fprintf (stdout,"     STT  MODBUS\n");
     fprintf (stdout,"======================\n");
     
-    // Abre a porta serial
+    
+    // Lê os outros parâmetros de configuração
     serialPortStr = getenv("SERIAL_PORT");
     if (serialPortStr != NULL) serialPortNumber = atoi(serialPortStr);
-    else serialPortNumber = SERIAL_PORT;    
-    fprintf (stdout, "\nAbrindo porta serial: %d\n", serialPortNumber);
+    else serialPortNumber = SERIAL_PORT;        
+    // Servidor MQTT
+    mqttServerAddr = getenv("SERVIDOR_MQTT");
+    if (mqttServerAddr == NULL) mqttServerAddr = (char *)MQTT_BROKER_HOST;
+    // Porta MQTT
+    mqttPortStr = getenv("PORT_MQTT");
+    if (mqttPortStr == NULL) mqttPort = MQTT_BROKER_PORT;
+    else mqttPort = atoi(mqttPortStr);
+    // Client ID no MQTT
+    mqttClientId = getenv("CLIENT_ID");
+    if (mqttClientId == NULL) mqttClientId = (char *)MQTT_CLIENT_ID;
+    // Tópico do MPPT partição 0
+    mqttTopicPartition0 = getenv("TOPIC_PARTITION0");
+    if (mqttTopicPartition0 == NULL) mqttTopicPartition0 = (char *)MQTT_TOPIC_PARTITION_0;
+    // Tópico do MPPT partição 1
+    mqttTopicPartition1 = getenv("TOPIC_PARTITION1");
+    if (mqttTopicPartition1 == NULL) mqttTopicPartition1 = (char *)MQTT_TOPIC_PARTITION_1;
+    // Tópico da Estação Meteorológica
+    mqttTopicWeather = getenv("TOPIC_WEATHER");
+    if (mqttTopicWeather == NULL) mqttTopicWeather = (char *)MQTT_TOPIC_WEATHERSTATION;
+    // Intervalo de atualização
+    updateIntervalStr = getenv("UPDATE_NTERVAL");
+    if (updateIntervalStr == NULL) updateInterval = DEFAULT_UPDATE_NTERVAL;
+    else updateInterval = atoi(updateIntervalStr);
+
+    // Loga os parametros que o sistema irá utilizar.
+    fprintf (stdout, "\nParâmetros do programa\n");
+    fprintf (stdout, "Porta serial: %d\n", serialPortNumber);
+    fprintf (stdout, "Servidor MQTT: %s\n", mqttServerAddr);
+    fprintf (stdout, "Porta servidor MQTT: %d\n", mqttPort);
+    fprintf (stdout, "MPPT Topic P0: %s\n", mqttTopicPartition0);
+    fprintf (stdout, "MPPT Topic P1: %s\n", mqttTopicPartition1);
+    fprintf (stdout, "Weather Station Topic: %s\n", mqttTopicWeather);
+    fprintf (stdout, "Intervalo de atualização: %d\n", updateInterval);
+    fprintf (stdout,"=================================\n");
+
+    // Abre a porta serial
     serialPortFD = openSerialPort(serialPortNumber, BAUDRATE, PARITY, DATA_BITS, STOP_BITS);
+    fprintf (stdout, "\nAbrindo porta serial: %d\n", serialPortNumber);
     if (serialPortFD == -1) {
         fprintf(stderr,"Falha ao abrir a porta serial.\n");
         return 1;
@@ -421,10 +449,8 @@ int main() {
     }
 
     // Inicializa o MQTT
-    mqttServerName = getenv("SERVIDOR_MQQT");
-    if (mqttServerName == NULL) mqttServerName = (char *)MQTT_BROKER_HOST;
-    fprintf (stdout, "\nInicializando MQTT: %s\n", mqttServerName);
-    if (InitMQTT(&mosq, mqttServerName) != 0) {
+    fprintf (stdout, "\nInicializando MQTT: %s\n", mqttServerAddr);
+    if (InitMQTT(&mosq, mqttServerAddr, mqttClientId, mqttPort) != 0) {
         fprintf(stderr, "Falha ao inicializar o MQTT.\n");
         closeSerialPort(serialPortFD);
         return 1;
@@ -437,25 +463,36 @@ int main() {
         // Le e publicaca dados da partição 0
         Partition0Data partition0Data;
         if (readPartition0Data(serialPortFD, &partition0Data)) {
-            partition0Data.online = true;
-            publishPartition0Data(mosq, &partition0Data);
+            partition0Data.onLine = true;
+            publishPartition0Data(mosq, &partition0Data, mqttTopicPartition0);
         }
         else {
-            menset (&partition0Data,0,sizeof(partition0Data));
-            publishPartition0Data(mosq, &partition0Data);
+            memset (&partition0Data,0,sizeof(Partition0Data));
+            publishPartition0Data(mosq, &partition0Data, mqttTopicPartition0);
         }
 
         // Le e publicaca dados da partição 1
         Partition1Data partition1Data;
         if (readPartition1Data(serialPortFD, &partition1Data)) {
-            publishPartition1Data(mosq, &partition1Data);
+            partition1Data.onLine = true;
+            publishPartition1Data(mosq, &partition1Data, mqttTopicPartition1);
         }
-
+        else {
+            memset (&partition1Data,0,sizeof(Partition1Data));
+            publishPartition1Data(mosq, &partition1Data, mqttTopicPartition1);            
+        }
+        
         // Le e publica dados da estação meteorologica
         TWeatherStationData weatherStationData;
         if (readWeatherStData(serialPortFD, &weatherStationData)) {
-            publishWeatherStationData(mosq,&weatherStationData);
+            weatherStationData.onLine = true;
+            publishWeatherStationData(mosq,&weatherStationData, mqttTopicWeather);
         }
+        else {
+            memset (&weatherStationData,0,sizeof(TWeatherStationData));
+            publishWeatherStationData(mosq, &weatherStationData, mqttTopicWeather);            
+        }
+
 
         // Process Mosquitto events
         rc = mosquitto_loop(mosq, -1, 1);

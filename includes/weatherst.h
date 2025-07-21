@@ -37,6 +37,7 @@ struct TWeatherStationData {
     uint16_t W20Rediation;
     uint16_t Rainfall;
     uint16_t TotalRadiation;
+    uint8_t  onLine;
 }; // WeatherStationData
 
 

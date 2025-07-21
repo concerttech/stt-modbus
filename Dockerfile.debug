@@ -45,7 +45,13 @@ EXPOSE ${DEBUG_SSH_PORT}
 ENV DEBIAN_FRONTEND="noninteractive"
 
 ENV SERIAL_PORT=2
-ENV SERVIDOR_MQQT=broker.hivemq.com
+ENV SERVIDOR_MQTT=broker.hivemq.com
+ENV PORT_MQTT=1883
+ENV CLIENT_ID=STT_Client
+ENV TOPIC_PARTITION0=stt/mppt0
+ENV TOPIC_PARTITION1=stt/mppt1
+ENV TOPIC_WEATHER=stt/weatherstation
+ENV UPDATE_NTERVAL=10
 
 # your regular RUN statements here
 # Install required packages
