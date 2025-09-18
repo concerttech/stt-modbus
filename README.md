@@ -6,6 +6,7 @@ controlador de carga e a estação meteorológica. O dados lidos são publicados
 O software executa a leitura dos dados do controlador de carga MPPT, lendo a partição 0 e a partição 1. 
 Os dados lidos são publicados no servidor MQTT. 
 Os dados da estação meteorológica são lidos e publicados no servidor MQTT.
+No caso de falha de comunicação um tópico zerado com a informação OnLine=0 é publicado
 O software entre em um sleep antes de reiniciar o processo.
 
 ### ModBus
@@ -29,9 +30,11 @@ As seguintes variáveis de ambiente são utilizadas:
 - SERIAL_PORT: Número da porta serial que será utilizada (/dev/verdin-uartX, onde X é o núemro da porta)
 - SERVIDOR_MQTT: Endereço do servidor MQQT
 - PORT_MQTT: Porta do servidor MQTT
+- MQTT_USER: Usuário no servidor MQTT
+- MQTT_PASS: Senha no servidor MQTT
 - CLIENT_ID: Identifição do cliente no servidor MQTT
 - TOPIC_PARTITION0: Tópico relativo a partição 0 do controlador de carga (MPPT)
 - TOPIC_PARTITION1: Tópico relativo a partição 1 do controlador de carga (MPPT)
 - TOPIC_WEATHER: Tópico relativo aos dados da Estação Meteorológica
+- HAS_WEATHERSTATION: Indica se tem ou não estção meteorológica
 - UPDATE_NTERVAL: Intervalo entre leituras
-

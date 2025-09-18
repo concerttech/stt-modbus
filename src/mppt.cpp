@@ -118,7 +118,7 @@ bool changeDeviceAddress(int fd, uint8_t newAddress) {
 
 // Efetua a leitura da partição 0
 bool readPartition0Data(int fd, Partition0Data *data) {
-    uint8_t responseBuffer[256]; // Buffer para armazenar a resposta
+    uint8_t responseBuffer[MAX_BUFFER_SIZE]; // Buffer para armazenar a resposta
     uint16_t responseLength;
     
     // Envia o comando para ler os registradores da partição 0 (endereços 0x000A a 0x001A)
@@ -159,7 +159,7 @@ bool readPartition0Data(int fd, Partition0Data *data) {
 
 // Efetua a leitura da partição 1
 bool readPartition1Data(int fd, Partition1Data *data) {
-    uint8_t responseBuffer[256]; // Buffer para armazenar a resposta
+    uint8_t responseBuffer[MAX_BUFFER_SIZE]; // Buffer para armazenar a resposta
     uint16_t responseLength;
 
     // Envia o comando para ler os registradores da partição 1 (endereços 0x00FD a 0x012D)
