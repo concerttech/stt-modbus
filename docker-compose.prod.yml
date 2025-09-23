@@ -1,4 +1,4 @@
 version: "3.9"
 services:
   sttmodbus:
-    image: agteixeira/sttmodbus:v0.0.1
+    image: agteixeira/sttmodbus:v0.0.0

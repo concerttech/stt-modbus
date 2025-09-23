@@ -60,7 +60,6 @@ int openSerialPort(char port, int baudrate, char parity, int dataBits, int stopB
     tty.c_oflag = 0;
     tty.c_lflag = 0;
     tty.c_lflag &= ~ECHO;
-    tty.c_lflag &= ~ICANON;
 
     // Configura a velocidade de transmissão
     cfsetospeed(&tty, baudrate);
@@ -148,15 +147,15 @@ int receiveDataWithTimeout(int fd, uint8_t *buffer, uint16_t maxLength, long tim
     struct timeval tv;
     int ret;
     int bytesRead = 0;
-   
+    struct timeval lastByteTime, currentTime;
+
     FD_ZERO(&readfds);
     FD_SET(fd, &readfds);
 
+    gettimeofday(&lastByteTime, NULL);
+
     printf("Dados recebidos: ");
     int i = 0;
-
-    //###
-    // usleep(50000);
 
     while (bytesRead < maxLength) {
         tv.tv_sec = timeout_ms / 1000;
@@ -177,7 +176,10 @@ int receiveDataWithTimeout(int fd, uint8_t *buffer, uint16_t maxLength, long tim
             if (n == 0)
                 continue;
 
-            bytesRead += n;            
+            bytesRead += n;
+            gettimeofday(&currentTime, NULL);
+            lastByteTime = currentTime;
+            
             for (; i < bytesRead; i++) {
                 printf("%02X ", buffer[i]);
             }
@@ -263,14 +265,13 @@ bool receiveResponse(int fd, uint8_t expectedFunctionCode, uint8_t expectedDevic
     uint16_t receivedCRC, calculatedCRC;
     int numBytesRead = receiveDataWithTimeout(fd, buffer, MAX_BUFFER_SIZE, 100);
 
-    // subtrai o tamanho do comando (echo)
     numBytesRead -= CmdSize;
-    
+    memcpy (buffer, buffer+CmdSize, numBytesRead);
+
     if (numBytesRead <= 0) {
         printf("Erro: Nenhuma resposta recebida ou erro na recepção.\n");
         return false;
     }
-    memcpy (buffer, buffer+CmdSize, numBytesRead);
 
     *length = numBytesRead;
     if (numBytesRead < 5) {

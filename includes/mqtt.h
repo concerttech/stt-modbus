@@ -6,15 +6,13 @@
 extern const char *MQTT_BROKER_HOST; // Replace with your broker
 extern const int MQTT_BROKER_PORT;
 extern const char *MQTT_CLIENT_ID;
-extern const  char *MQTT_USER_NAME;
-extern const char *MQTT_PASSWORD;
 extern const char *MQTT_TOPIC_PARTITION_0;
 extern const char *MQTT_TOPIC_PARTITION_1;
 extern const char *MQTT_TOPIC_WEATHERSTATION;
 
 /* Protótipo das funções exportadas */
 // Inicialização da conexão
-int InitMQTT (struct mosquitto **mosq, char *mqttServerAddr, char *clientID, int clientPort, char *mqtt_username, char *mqtt_password);
+int InitMQTT (struct mosquitto **mosq, char *mqttServerAddr, char *clientID, int clientPort);
 // Fecha a conexão
 void CloseMQTT (struct mosquitto *mosq);
 
