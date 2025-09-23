@@ -32,6 +32,8 @@
 
 #define DEFAULT_UPDATE_NTERVAL  10 // 10 segundos
 
+#define HAS_WEATHERSTATION 1    // Indica que tem estação meteorologica
+
 // Definição das portas de IO
 /*----------Serial A------------*/
 // SODIMM 133
@@ -384,7 +386,9 @@ int main() {
     int serialPortNumber;
     char *mqttServerAddr, *mqttPortStr, *updateIntervalStr;
     char *mqttClientId, *mqttTopicPartition0, *mqttTopicPartition1, *mqttTopicWeather;
+    char *userName, *password;
     char *serialPortStr;
+    char hasWeatherstation, *hasWeatherStationStr;
     struct mosquitto *mosq = NULL;
     int mqttPort;
     int updateInterval;
@@ -408,6 +412,13 @@ int main() {
     // Client ID no MQTT
     mqttClientId = getenv("CLIENT_ID");
     if (mqttClientId == NULL) mqttClientId = (char *)MQTT_CLIENT_ID;
+    // Username no MQTT
+    userName = getenv("MQTT_USER");
+    if (userName == NULL) userName = (char *)MQTT_USER_NAME;
+    // Password no MQTT
+    password = getenv("MQTT_PASS");
+    if (password == NULL) password = (char *)MQTT_PASSWORD;
+
     // Tópico do MPPT partição 0
     mqttTopicPartition0 = getenv("TOPIC_PARTITION0");
     if (mqttTopicPartition0 == NULL) mqttTopicPartition0 = (char *)MQTT_TOPIC_PARTITION_0;
@@ -417,6 +428,10 @@ int main() {
     // Tópico da Estação Meteorológica
     mqttTopicWeather = getenv("TOPIC_WEATHER");
     if (mqttTopicWeather == NULL) mqttTopicWeather = (char *)MQTT_TOPIC_WEATHERSTATION;
+    // Tem ou não estação meteorológica
+    hasWeatherStationStr = getenv("HAS_WEATHERSTATION");
+    if (hasWeatherStationStr != NULL) hasWeatherstation = atoi(hasWeatherStationStr);
+    else hasWeatherstation = HAS_WEATHERSTATION;  
     // Intervalo de atualização
     updateIntervalStr = getenv("UPDATE_NTERVAL");
     if (updateIntervalStr == NULL) updateInterval = DEFAULT_UPDATE_NTERVAL;
@@ -427,6 +442,8 @@ int main() {
     fprintf (stdout, "Porta serial: %d\n", serialPortNumber);
     fprintf (stdout, "Servidor MQTT: %s\n", mqttServerAddr);
     fprintf (stdout, "Porta servidor MQTT: %d\n", mqttPort);
+    fprintf (stdout, "Usuario do MQTT: %d\n", userName);
+    fprintf (stdout, "Senha do MQTT: ***\n");
     fprintf (stdout, "MPPT Topic P0: %s\n", mqttTopicPartition0);
     fprintf (stdout, "MPPT Topic P1: %s\n", mqttTopicPartition1);
     fprintf (stdout, "Weather Station Topic: %s\n", mqttTopicWeather);
@@ -450,7 +467,7 @@ int main() {
 
     // Inicializa o MQTT
     fprintf (stdout, "\nInicializando MQTT: %s\n", mqttServerAddr);
-    if (InitMQTT(&mosq, mqttServerAddr, mqttClientId, mqttPort) != 0) {
+    if (InitMQTT(&mosq, mqttServerAddr, mqttClientId, mqttPort, userName, password) != 0) {
         fprintf(stderr, "Falha ao inicializar o MQTT.\n");
         closeSerialPort(serialPortFD);
         return 1;
@@ -483,14 +500,16 @@ int main() {
         }
         
         // Le e publica dados da estação meteorologica
-        TWeatherStationData weatherStationData;
-        if (readWeatherStData(serialPortFD, &weatherStationData)) {
-            weatherStationData.onLine = true;
-            publishWeatherStationData(mosq,&weatherStationData, mqttTopicWeather);
-        }
-        else {
-            memset (&weatherStationData,0,sizeof(TWeatherStationData));
-            publishWeatherStationData(mosq, &weatherStationData, mqttTopicWeather);            
+        if (hasWeatherstation) {
+            TWeatherStationData weatherStationData;
+            if (readWeatherStData(serialPortFD, &weatherStationData)) {
+                weatherStationData.onLine = true;
+                publishWeatherStationData(mosq,&weatherStationData, mqttTopicWeather);
+            }
+            else {
+                memset (&weatherStationData,0,sizeof(TWeatherStationData));
+                publishWeatherStationData(mosq, &weatherStationData, mqttTopicWeather);            
+            }
         }
 
 
