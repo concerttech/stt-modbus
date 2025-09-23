@@ -18,7 +18,7 @@
 
 // Efetua a leitura dos dados da estação meteorologica
 bool readWeatherStData(int fd, TWeatherStationData *data) {
-    uint8_t responseBuffer[MAX_BUFFER_SIZE]; // Buffer para armazenar a resposta
+    uint8_t responseBuffer[256]; // Buffer para armazenar a resposta
     uint16_t responseLength;
 
     // Envia o comando para ler os registradores da estação meteorologica (endereços 0x01F4 a 0x0202)
